@@ -51,27 +51,39 @@ to go
       ]
     ]
 
-    if (color = red) [
-      create-links-with other turtles with [color = green] in-radius 1
+;    if (color = red) [
+;      create-links-with other turtles with [color = green] in-radius 1
+;    ]
+;
+;    if (color = blue) [
+;      create-links-with other turtles with [color = green] in-radius 1
+;    ]
+
+    if (color = orange) and (hours = (incubation-time * 24)) [
+      ifelse (random 100 < symptom-rate) [
+         set color red
+         set speed 0
+         set hours 0
+      ]
+      [
+        set color cyan
+        set hours 0
+      ]
     ]
 
-    if (color = blue) [
-      create-links-with other turtles with [color = green] in-radius 1
+    if (color = red) and (hours = (4 * 24)) [
+      ifelse (random 100 < hospitalization-rate) [
+        set color pink
+        set hours 0
+      ]
+      [
+        set color cyan
+        set speed start-speed
+        set hours 0
+      ]
     ]
 
-    ifelse (color = orange) and (hours = (incubation-time * 24)) and (random 100 < symptom-rate) [
-      set color red
-      set hours 0
-      set speed 0
-    ]
-    [
-     if (color = orange) and (hours > (illness-duration * 24)) [
-      set color cyan
-      set hours 0
-     ]
-    ]
-
-    if (color = red) and (hours = (illness-duration * 24)) [
+    if (color = pink) and (hours = (illness-duration * 24)) [
       ifelse random 100 < severity-rate [
         set color violet
         set hours 0
@@ -79,6 +91,7 @@ to go
       [
         set color cyan
         set hours 0
+        set speed start-speed
       ]
 
     ]
@@ -91,10 +104,11 @@ to go
       [
         set color cyan
         set hours 0
+        set speed start-speed
 
       ]
     ]
-    if (color = green) and can-vaccinate [
+    if (color = green) and (can-vaccinate) [
       if ((count my-links) > 5) [
         set color blue
         set hours 0
@@ -181,15 +195,15 @@ NIL
 1
 
 SLIDER
-56
-661
-228
-694
+34
+577
+206
+610
 people-count
 people-count
 0
 10000
-2000.0
+7000.0
 200
 1
 NIL
@@ -204,7 +218,7 @@ infection-probability
 infection-probability
 0
 100
-5.0
+10.0
 1
 1
 %
@@ -234,7 +248,7 @@ severity-rate
 severity-rate
 0
 100
-5.0
+34.0
 1
 1
 %
@@ -264,7 +278,7 @@ illness-duration
 illness-duration
 0
 50
-14.0
+10.0
 1
 1
 days
@@ -293,6 +307,7 @@ PENS
 "immune" 1.0 0 -8990512 true "" "plot count turtles with [color = cyan]"
 "dead" 1.0 0 -7500403 true "" "plot count turtles with [color = gray]"
 "vaccinated" 1.0 0 -15390905 true "" "plot count turtles with [color = blue]"
+"hospitalized" 1.0 0 -1664597 true "" "plot count turtles with [color = pink]"
 
 MONITOR
 3070
@@ -348,20 +363,20 @@ How long before first symptoms show up?
 
 TEXTBOX
 37
-187
+176
 245
-206
-How many people need to go the hospital?
+196
+How many hospitalized people need to go the ICU?
 8
 0.0
 1
 
 TEXTBOX
 40
-251
+256
 237
-273
-How many people in the hospital do not survive?\t
+278
+How many people in the ICU do not survive?\t
 8
 0.0
 1
@@ -406,27 +421,6 @@ count turtles with [color = green] / people-count * 100
 2
 1
 11
-
-MONITOR
-146
-315
-196
-352
- %
-severity-rate * death-rate / 100
-2
-1
-9
-
-TEXTBOX
-37
-323
-153
-347
-This should lead to a total death rate of:
-8
-0.0
-1
 
 BUTTON
 2962
@@ -506,10 +500,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-58
-591
-230
-624
+255
+87
+428
+120
 symptom-rate
 symptom-rate
 0
@@ -517,22 +511,37 @@ symptom-rate
 20.0
 1
 1
-NIL
+%
 HORIZONTAL
 
 SLIDER
-83
-758
-255
-791
+35
+514
+207
+547
 social-distance
 social-distance
 0
 1
-0.3
+0.8
 0.1
 1
 NIL
+HORIZONTAL
+
+SLIDER
+251
+138
+463
+171
+hospitalization-rate
+hospitalization-rate
+0
+100
+15.0
+1
+1
+%
 HORIZONTAL
 
 @#$#@#$#@
