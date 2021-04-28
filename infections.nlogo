@@ -1,28 +1,45 @@
 turtles-own [
   hours
   speed
-  known-vaccinated
-  known-illnesses
+  vac_cost
+  covid_risk
   can-vaccinate
+  seen_ill
+  seen_vac
+  seen_total
 ]
 
 globals [
   start-speed
+  vaccines-available
+
 ]
+
+to initial_vaccination
+ ask turtles [
+    if random 100 < 10 [
+      set color blue
+    ]
+  ]
+end
 
 to setup
   clear-all
   reset-ticks
   set start-speed 0.5
+  set vaccines-available false
 
   create-turtles people-count [
     setxy random-xcor random-ycor
     set shape "person"
     set color green
     set speed start-speed
-    set known-vaccinated 0
-    set known-illnesses 0
     set can-vaccinate true
+    set seen_ill 0
+    set seen_vac 0
+    set seen_total 1
+    set covid_risk 100
+    set vac_cost 10
   ]
 
   ask one-of turtles [
@@ -30,6 +47,17 @@ to setup
   ]
 end
 
+to-report will-vaccinate [t]
+  if not can-vaccinate [report false]
+
+  let g_without ( seen_ill + seen_vac) / seen_total + 0.7
+  let g_with ( seen_ill + seen_vac + 1) / (seen_total + 1) + 0.7
+
+
+  let b_no_vac g_without * herd-imm-benefit  - (1 - g_without) * covid_risk
+  let b_vac g_with * herd-imm-benefit - vac_cost
+  ifelse (b_vac > b_no_vac) [report true] [report false]
+end
 
 to go
   ask turtles [
@@ -41,23 +69,36 @@ to go
   ask turtles [
     if (color = orange) [
       ask turtles in-radius 0.5 [
-        if random 100 < infection-probability  [
-          if color = green [
+        let roll random 100
+        if roll < infection-probability and color = green [
             set color orange
             set hours 0
-            ask my-links [die]
           ]
+        if roll < 0.1 and color = blue [
+          set color orange
+          set hours 0
         ]
       ]
     ]
 
-;    if (color = red) [
+
+    if (color = red) [
 ;      create-links-with other turtles with [color = green] in-radius 1
-;    ]
-;
-;    if (color = blue) [
+;      let my_id who
+      ask other turtles with [color = green] in-radius 2 [
+          set seen_ill seen_ill + 1
+
+      ]
+
+    ]
+
+    if (color = blue) [
 ;      create-links-with other turtles with [color = green] in-radius 1
-;    ]
+;      let my_id who
+      ask other turtles with [color = green] in-radius 2 [
+        set seen_vac seen_vac + 1
+      ]
+    ]
 
     if (color = orange) and (hours = (incubation-time * 24)) [
       ifelse (random 100 < symptom-rate) [
@@ -108,12 +149,18 @@ to go
 
       ]
     ]
-    if (color = green) and (can-vaccinate) [
-      if ((count my-links) > 5) [
+    if (color = green) and (can-vaccinate) and vaccines-available [
+      set covid_risk (seen_ill / seen_total)* covid_risk_coeff + const_perceived_covid_risk
+      if will-vaccinate(self) [
         set color blue
         set hours 0
+        set seen_ill []
         set speed start-speed
       ]
+    ]
+
+    if (color = green) [
+      set seen_total seen_total + (count other turtles in-radius 2)
     ]
   ]
 
@@ -195,15 +242,15 @@ NIL
 1
 
 SLIDER
-34
-577
-206
-610
+35
+560
+207
+593
 people-count
 people-count
 0
 10000
-7000.0
+3000.0
 200
 1
 NIL
@@ -300,7 +347,6 @@ true
 true
 "" ""
 PENS
-"healthy" 1.0 0 -13840069 true "" "plot count turtles with [color = green]"
 "infected" 1.0 0 -955883 true "" "plot count turtles with [color = orange]"
 "ill" 1.0 0 -2674135 true "" "plot count turtles with [color = red]"
 "severe" 1.0 0 -8630108 true "" "plot count turtles with [color = violet]"
@@ -417,7 +463,7 @@ MONITOR
 3062
 483
 Unaffected %
-count turtles with [color = green] / people-count * 100
+(count (turtles with [color = green]) + count (turtles with [color = blue])) / people-count * 100
 2
 1
 11
@@ -470,36 +516,6 @@ TEXTBOX
 1
 
 SLIDER
-2839
-534
-3077
-567
-acute-care-hospital-beds
-acute-care-hospital-beds
-0
-30
-9.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-2839
-598
-3019
-631
-icu-hospital-beds
-icu-hospital-beds
-0
-10
-2.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
 255
 87
 428
@@ -523,7 +539,7 @@ social-distance
 social-distance
 0
 1
-0.8
+0.4
 0.1
 1
 NIL
@@ -543,6 +559,85 @@ hospitalization-rate
 1
 %
 HORIZONTAL
+
+BUTTON
+158
+760
+327
+793
+vaccines-available?
+set vaccines-available true
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+SLIDER
+35
+608
+214
+641
+herd-imm-benefit
+herd-imm-benefit
+0
+300
+300.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+38
+663
+288
+696
+const_perceived_covid_risk
+const_perceived_covid_risk
+0
+100
+27.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+44
+712
+216
+745
+covid_risk_coeff
+covid_risk_coeff
+0
+200
+93.0
+1
+1
+NIL
+HORIZONTAL
+
+BUTTON
+2819
+892
+2984
+925
+initial_vaccination?
+initial_vaccination
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
